@@ -25,13 +25,13 @@ func main() {
 		return
 	}
 
-	http.HandleFunc("/create-user", controller.CreateUser)
+	http.HandleFunc("/create-user", controller.CreateUser(db))
 
 	log.Println("Server started on :8080")
+
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatalf("Could not start server: %s\n", err.Error())
 	}
 
-	fmt.Println("Database connected successfully", db)
 }
