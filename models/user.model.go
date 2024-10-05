@@ -7,3 +7,8 @@ type User struct {
 	PASSWORD string `json:"password"`
 	ROLE_ID  int32  `json:"role_id"`
 }
+
+type Login struct {
+	EMAIL    string `json:"email"`
+	PASSWORD string `json:"password"`
+}
