@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -114,31 +113,6 @@ func Login(db *sql.DB) http.HandlerFunc {
 
 func GetAllUsers(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		authHeader := r.Header.Get("Bearer")
-		if authHeader == "" {
-			http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
-			return
-		}
-
-		tokenString := strings.Split(authHeader, " ")[1]
-
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-
-			fmt.Println("=====dummy-=====")
-			fmt.Println("-----token------")
-
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("Unexpected signing method")
-			}
-			secretKey := []byte("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9")
-			return secretKey, nil
-		})
-
-		if err != nil || !token.Valid {
-			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
-			return
-		}
 
 		query := `SELECT u.id as user_id,title as role_name, u.username, u.email, u.role_id from users as u left join role as r on 
 u.role_id = r.id `

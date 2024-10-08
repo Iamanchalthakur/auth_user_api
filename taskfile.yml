@@ -1,0 +1,24 @@
+version: '3'
+
+tasks:
+ 
+  migrateup:
+    desc: Run database migrations (up)
+    cmds:
+      - migrate -path platform/migrations -database "postgresql://postgres:123456@localhost:5432/testing?sslmode=disable" -verbose up
+
+  new_schema:
+    desc: Create a new database migration
+    cmds:
+      - migrate create -ext sql -dir platform/migrations -seq {{.name}}
+
+  air:
+    desc: Live reloading
+    cmds:
+      - air -c .air.toml
+
+  server:
+    desc: Run the bank application server
+    cmds:
+      - go run main.go
+
