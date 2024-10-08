@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -114,7 +115,33 @@ func Login(db *sql.DB) http.HandlerFunc {
 func GetAllUsers(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		query := "SELECT id, username, email, role_id FROM users"
+		authHeader := r.Header.Get("Bearer")
+		if authHeader == "" {
+			http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+			return
+		}
+
+		tokenString := strings.Split(authHeader, " ")[1]
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+
+			fmt.Println("=====dummy-=====")
+			fmt.Println("-----token------")
+
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("Unexpected signing method")
+			}
+			secretKey := []byte("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9")
+			return secretKey, nil
+		})
+
+		if err != nil || !token.Valid {
+			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+			return
+		}
+
+		query := `SELECT u.id as user_id,title as role_name, u.username, u.email, u.role_id from users as u left join role as r on 
+u.role_id = r.id `
 
 		rows, err := db.Query(query)
 		if err != nil {
@@ -127,18 +154,58 @@ func GetAllUsers(db *sql.DB) http.HandlerFunc {
 
 		for rows.Next() {
 			var user models.User
-			err := rows.Scan(&user.ID, &user.USERNAME, &user.EMAIL, &user.ROLE_ID)
+			err := rows.Scan(&user.ID, &user.ROLE_NAME, &user.USERNAME, &user.EMAIL, &user.ROLE_ID)
 			if err != nil {
+				fmt.Println("---error---", err)
 				http.Error(w, "Error reading users", http.StatusInternalServerError)
 				return
 			}
 			users = append(users, user)
 			fmt.Println("====user=======", user)
 			fmt.Println("====users=======", users)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(users)
+	}
+}
 
+func DeleteAllUser(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("=====dummy-=====")
+
+		query := `DELETE from users`
+		_, err := db.Exec(query)
+		if err != nil {
+			http.Error(w, "Failed to delete all userws", http.StatusInternalServerError)
+			log.Println("=====error in query=====", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "All users deleted successfully",
+		})
+	}
+}
+
+func UpdateUser(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var user models.User
+		fmt.Println("=====dummy-=====")
+
+		query := `UPDATE users SET username = $2, email = $3, password = $4, role_id = $5 WHERE id = $1`
+
+		// Send query to database.
+		_, err := db.Exec(query, user.ID, user.USERNAME, user.EMAIL, user.PASSWORD, user.ROLE_ID)
+		if err != nil {
+			http.Error(w, "Failed to update user", http.StatusInternalServerError)
+			fmt.Println("Update query error:", err)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(users)
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "User updated successfully",
+		})
+
 	}
 }

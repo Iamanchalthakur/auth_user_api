@@ -28,6 +28,8 @@ func main() {
 	http.HandleFunc("/create-user", controller.CreateUser(db))
 	http.HandleFunc("/login", controller.Login(db))
 	http.HandleFunc("/get-users", controller.GetAllUsers(db))
+	http.HandleFunc("/delete-user", controller.DeleteAllUser(db))
+	http.HandleFunc("/update-user/{id}", controller.UpdateUser(db))
 
 	log.Println("Server started on :8080")
 
